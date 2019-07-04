@@ -1,5 +1,29 @@
-// Primary header
-#include "CellularityMeasurement.h"
+/*=============================================================================
+ *
+ *  Copyright (c) 2019 Sunnybrook Research Institute
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ *
+ *=============================================================================*/
+ 
+ // Primary header
+#include "BoxDrop.h"
 
 // System headers
 #include <algorithm>
@@ -19,20 +43,20 @@
 // Declare that this object has AlgorithmBase subclasses
 //  and declare each of those sub-classes
 POCO_BEGIN_MANIFEST(sedeen::algorithm::AlgorithmBase)
-POCO_EXPORT_CLASS(sedeen::algorithm::CellularityMeasurement)
+POCO_EXPORT_CLASS(sedeen::algorithm::BoxDrop)
 POCO_END_MANIFEST
 
 namespace sedeen {
 namespace algorithm {
-CellularityMeasurement::CellularityMeasurement()
+BoxDrop::BoxDrop()
 {
 }
 
-CellularityMeasurement::~CellularityMeasurement()
+BoxDrop::~BoxDrop()
 {
 }
 
-void CellularityMeasurement::init(const image::ImageHandle& image)
+void BoxDrop::init(const image::ImageHandle& image)
 {
 	if (image::isNull(image)) return;
 	auto dims = getDimensions(image,0);
@@ -67,7 +91,7 @@ void CellularityMeasurement::init(const image::ImageHandle& image)
 		m_results = createOverlayResult(*this);
 }
 
-bool CellularityMeasurement::buildPipeline()
+bool BoxDrop::buildPipeline()
 {
 	using namespace image::tile;
 	bool pipelineChanged = false;
@@ -144,7 +168,7 @@ bool CellularityMeasurement::buildPipeline()
 	s.saveToFile();
 	return pipelineChanged;
 }
-void CellularityMeasurement::run()
+void BoxDrop::run()
 {
 	using namespace image::tile;
 	auto pipeline_changed = buildPipeline();
@@ -191,7 +215,7 @@ void CellularityMeasurement::run()
 
 }
 
-std::string CellularityMeasurement::generateReport() const
+std::string BoxDrop::generateReport() const
 {
 	std::ostringstream ss;
 	ss << std::left << std::setfill(' ') << std::setw(20);
@@ -202,7 +226,7 @@ std::string CellularityMeasurement::generateReport() const
 
 	return ss.str();
 }
-void CellularityMeasurement::updateIntermediateResult()
+void BoxDrop::updateIntermediateResult()
 {
 	auto update_result = [&](const std::shared_ptr<image::tile::Factory> &factory) 
 	{
@@ -215,7 +239,7 @@ void CellularityMeasurement::updateIntermediateResult()
 		Point point;
 		point.setX((int)(m_rect.topLeft().getX()));
 		point.setY((int)(m_rect.topLeft().getY()));
-		parameter::DisplayRegion region = parameter::DisplayRegion(Rect(point,size),size);
+	    DisplayRegion region = DisplayRegion(Rect(point,size),size);
 		auto outputImage = 
 			compositor->getImage(region.source_region, region.output_size);
 
