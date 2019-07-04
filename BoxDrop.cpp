@@ -168,6 +168,7 @@ bool BoxDrop::buildPipeline()
 	s.saveToFile();
 	return pipelineChanged;
 }
+
 void BoxDrop::run()
 {
 	using namespace image::tile;
