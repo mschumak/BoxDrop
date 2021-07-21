@@ -91,8 +91,8 @@ void BoxDrop::init(const image::ImageHandle& image) {
 
 	m_text = createTextFieldParameter(*this,
 		"ROI Description",
-		"Percentage of Cellularity",
-		"cellularity(%)",
+		"Text to appear in the description of the newly-placed square annotation",
+		"",
 		true);
 
 	m_region_toProcess = 
@@ -109,7 +109,7 @@ void BoxDrop::init(const image::ImageHandle& image) {
     //Allow the user to choose where to save the image files
     sedeen::file::FileDialogOptions saveFileDialogOptions = defineSaveFileDialogOptions();
     m_saveFileAs = createSaveFileDialogParameter(*this, "Save As...",
-        "The output image will be saved to this file name. If the file name includes an extension of type TIF/PNG/BMP/GIF/JPG, it will override the Save File Format choice.",
+        "The output image will be saved to this file name. If the file name includes an extension of type TIF/PNG/BMP/GIF/JPG, it will be saved as that type (.tif is the default).",
         saveFileDialogOptions, true);
 
 	m_output_text = createTextResult(*this, "text Result");
@@ -150,8 +150,10 @@ bool BoxDrop::buildPipeline()
 		point = static_cast<int>(points[0][0].getX());
 		m_rect = Rectangle(xTopLeft,yTopLeft,m_size,m_size,0,Center);
 		GraphicDescription graph;
-		std::string text = m_text; 
-		text = "Cellularity: "+text;
+		std::string text = m_text;
+        //This was originally "Cellularity: ", and was a prefix 
+        //to all descriptions created by this plugin
+		//text = "BoxDrop: "+text;
 
 		graph.setDescription(text.c_str());
 		graph.setName(m_name.c_str());
@@ -204,22 +206,16 @@ void BoxDrop::run()
 	if (pipeline_changed && guiControlsChanged)
 	{
         std::string text = m_text;
-        text = "Cellularity: "+text;
+        //This was originally "Cellularity: ", and was a prefix 
+        //to all descriptions created by this plugin
+        //text = "BoxDrop: "+text;
         m_results.drawRectangle(m_rect, m_style, m_name, text);
         m_results.setVisible(true);
         //updateIntermediateResult();
 
-        //Use m_rect to define a cached constrained factory to use as output
-        if (!m_rect.isNull()) {
-            //Define a GraphicItemBase from the Rectangle
-
-            //Create a constrained factory
-            //RegionFactory constrained_factory = std::make_shared<RegionFactory>(source_factory);
-
-            //Create a cached factory from the constrained factory
-            //m_cached_output_factory = std::make_shared<Cache>(constrained_factory, RecentCachePolicy(30));
-        }
-
+        //Put the source_factory into a cache and set the output factory
+        SetOutputFactory(std::make_shared<Cache>(source_factory, RecentCachePolicy(30)));
+        
         //Check whether the user wants to write to image files, that the field is not blank,
         //and that the file can be created or written to
         std::string outputFilePath;
@@ -265,10 +261,10 @@ void BoxDrop::run()
             //Check whether saving was successful
             std::stringstream ss;
             if (saveResult) {
-                fileSaveUpdate << std::endl << "Stain-separated image saved as " << outputFilePath << std::endl;
+                fileSaveUpdate << std::endl << "Image saved as " << outputFilePath << std::endl;
             }
             else {
-                fileSaveUpdate << std::endl << "Saving the stain-separated image failed. Please check the file name and directory permissions." << std::endl;
+                fileSaveUpdate << std::endl << "Saving the image failed. Please check the file name and directory permissions." << std::endl;
             }
             final_report_text.append(fileSaveUpdate.str());
         }    
@@ -289,8 +285,10 @@ void BoxDrop::run()
 		if(i<numberOfOverlays-1)
 		{
 			if((std::string(graphics[i].getDescription()).empty()) &&
-				std::strcmp(graphics[i].getName(),graphics[i+1].getName())==0 &&
-				std::string(graphics[i+1].getDescription()).find("Cellularity:")!=std::string::npos)
+				std::strcmp(graphics[i].getName(),graphics[i+1].getName())==0)
+                //This was originally "Cellularity: ", and was a prefix 
+                //to all descriptions created by this plugin
+                //&& std::string(graphics[i+1].getDescription()).find("BoxDrop:")!=std::string::npos)
 			{
 				i++;
 			}
@@ -355,7 +353,7 @@ void BoxDrop::updateIntermediateResult()
 ///Define the save file dialog options outside of init
 sedeen::file::FileDialogOptions BoxDrop::defineSaveFileDialogOptions() {
     sedeen::file::FileDialogOptions theOptions;
-    theOptions.caption = "Save separated images as...";
+    theOptions.caption = "Save image as...";
     //theOptions.flags = sedeen::file::FileDialogFlags:: None currently needed
     //theOptions.startDir; //no current preference
     //Define the file type dialog filter
@@ -370,18 +368,14 @@ sedeen::file::FileDialogOptions BoxDrop::defineSaveFileDialogOptions() {
     return theOptions;
 }//end defineSaveFileDialogOptions
 
-
 bool BoxDrop::SaveFlatImageToFile(const std::string &p) {
     //It is assumed that error checks have already been performed, and that the type is valid
     //In RawImage::save, the used file format is defined by the file extension.
     //Supported extensions are : .tif, .png, .bmp, .gif, .jpg
     std::string outFilePath = p;
     bool imageSaved = false;
-    //Access the output from the output factory
-    //In this case, the image is not modified
-    // Get source image properties
-    auto source_factory = image()->getFactory();
-    auto outputFactory = source_factory;
+    //Access the output factory (set in run() method)
+    auto outputFactory = GetOutputFactory();
 
     //Create a compositor
     auto compositor = std::make_unique<image::tile::Compositor>(outputFactory);
@@ -402,7 +396,6 @@ bool BoxDrop::SaveFlatImageToFile(const std::string &p) {
     //true on successful save, false otherwise
     return imageSaved;
 }//end SaveFlatImageToFile
-
 
 const std::string BoxDrop::getExtension(const std::string &p) {
     namespace fs = std::filesystem; //an alias

@@ -90,6 +90,14 @@ private:
 
     ///Create a cached factory for faster image saving
     std::shared_ptr<image::tile::Factory> m_cached_output_factory;
+    ///Set the output factory
+    void SetOutputFactory(std::shared_ptr<image::tile::Factory> fac) {
+        m_cached_output_factory = fac;
+    }
+    ///Get the output factory
+    std::shared_ptr<image::tile::Factory> GetOutputFactory() const {
+        return m_cached_output_factory;
+    }
 
 private:
     std::string m_name;
